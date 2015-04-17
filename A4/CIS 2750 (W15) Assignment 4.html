@@ -1,0 +1,389 @@
+
+<!-- saved from url=(0065)http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/A4/ -->
+<html hola_ext_inject="ready"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title> CIS*2750 (W15) Assignment 4 </title>
+<link rel="stylesheet" type="text/css" href="./CIS 2750 (W15) Assignment 4_files/dbmcc.css">
+<style type="text/css"></style></head>
+<body background="./CIS 2750 (W15) Assignment 4_files/marble.gif" hola-ext-player="1">
+<hr>
+
+
+<center>
+<font size="5"> <b>Software Systems Development and Integration</b></font><br>
+<font size="3"> CIS*2750 (W15) <br>
+</font></center><font size="3">
+<hr>
+<br>
+<center><font size="4"><u>Assignment #4</u></font>
+<br><br>
+<b>Due:</b> March 29, 2015 at Midnight
+<br><br>
+
+Key Concepts: <i>SQL; database integration; scripting</i>.
+</center>
+
+<br><br>
+
+<p>
+We now consider the final components of our dialog compiler system in which
+(1) the dialog applications emitted by the compiler have built-in support
+for data management via a postgres database, and (2) the code base and
+installation process for the system are properly organized, streamlined and 
+automated.  The general idea is that these dialog-based applications now
+possess built-in functionality for interacting with a database, and thus are
+suitable for use as (admittedly crude) data management systems (managing
+customer records, student data, inventory, etc.).  Consider an organization
+with a vast array of dynamic information storage needs, and for which there
+is an ongoing requirement that new and modified front-ends be available to
+access this information for a wide range of users.  To this end, you have
+developed a dialog compiler which allows for the specification and production
+of simple "database-lite" front ends that are easily configured and extended.
+</p><p>
+In this assignment, you will build on your assignment 3 implementation to
+complete the system by integrating database access support into the Java code
+output by your compiler.  You will also develop a script-based installer with
+which system setup can be configured and automated.
+</p><p>
+Read the following sections carefully to ensure that you know what is to be
+done and what is to be handed in. There are many details that must be handled
+correctly for you to receive full marks on this assignment; you should pay
+attention to these details.   Your makefile must correctly produce the program
+required, and each function, type and program file must be correctly named and
+must behave in the appropriate way. If the details aren't addressed
+successfully you will lose marks.  Please refer to the
+<a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/assignments.html#style">coding style guidelines</a> to provide
+direction regarding the format of the code you write.  You are expected to
+work independently on this assignment (please see notes on
+<a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/outline.html#cheating">academic misconduct in computing</a>
+for clarification if necessary).
+
+<br><br>
+
+</p><hr>
+
+<center><h3>Dialog Compiler (release version with database integration)</h3></center>
+
+<p>
+Add support for database integration to the Java dialogs output by your
+compiler.  This is to be accomplished through the provision of four (4)
+pre-defined <tt>ActionListener</tt> classes as part of any compiled dialog
+(that is to say, these <tt>ActionListener</tt>s are provided by your system,
+and not implemented separately by the user).  Your <tt>ActionListener</tt>
+classes will make use of the <i>Java database connectivity</i> (<b>JDBC</b>)
+API to connect to a postgres database that is provided for your use.  It is
+implicit that each compiled dialog interacts with a table unique to that
+application (i.e. there may be many tables in your database, each associated
+with a different dialog).  note that due to the nature of this implementation
+the set-up of the database will be handled in an asynchronous manner---all
+relevant <tt>ActionListener</tt> classes will take steps to ensure the
+appropriate table is present in the database, creating it as necessary if
+this is the first access by the dialog.
+<br><br>
+
+</p><h4>Dialog == Table</h4>
+<p>
+There is a one-to-one mapping between a given dialog application, and a
+table in the database in which records corresponding to the fields of the
+dialog can be stored.  We must use a primary key field for these tables,
+however since we can assume nothing about what kinds of dialogs will be
+generated, we will impose a new field on the dialog which will appear <u>in
+addition to</u> those declared in the input file(s).  This field will always
+be called <i><b>ID</b></i>, be of type <tt>integer</tt>, appear first in the
+dialog display, and corresponds to an <tt>auto_increment</tt> field in the
+database (so IDs will automatically be assigned to records as they are added).
+</p><p>
+By way of example, the video_way_customer_records example from a3 would result
+in a dialog with an ID field above the <tt>membernumber</tt> that already
+appears in that example, given the same input file (the generation of the ID
+field is automatic)
+<br><br>
+
+
+</p><h4>ADD, DELETE, QUERY, UPDATE are <u>reserved</u> names for buttons</h4>
+<p>
+To this point the user had complete control over the names of buttons and the
+<tt>ActionListener</tt> objects attached to them.  This is no longer the case.
+The exact names (case-sensitive) <tt>ADD</tt>, <tt>DELETE</tt>, <tt>QUERY</tt>
+and <tt>UPDATE</tt> should now correspond explicitly to the four pre-defined
+<tt>ActionListener</tt> classes described below---it is up to you if you will
+allow the user to specify custom buttons with the same names where the case
+varies.  The user need not provide an <tt>ActionListener</tt> name for these
+pre-defined buttons.  The ones described below are automatically attached
+when one of these reserved buttons is declared.
+
+</p><h4>Database <tt>ActionListener</tt> Classes</h4>
+<p>
+The reserved (pre-defined) buttons described above correspond to the following
+<tt>ActionListener</tt> classes you are to implement and provide as part of
+the compiled dialog.  Note: you are free to generate these classes dynamically
+if you wish, and you should only be providing those classes that are necessary
+given the specific input (i.e. if there is no delete button, you shouldn't be
+provisioning the corresponding <tt>ActionListener</tt> class for that dialog).
+</p><p>
+The required behaviour of these <tt>ActionListener</tt> classes with respect
+to the contents of the dialog fields is described below.  Note that in each
+case you are provided with a set of criteria---it is the task of the
+<tt>ActionListener</tt> to ensure these criteria are met; this includes
+creating the full table for the specific dialog if there is not one already
+in the DB.
+</p><dl>
+<dt> <u>ADD</u>: <i>add a record to the database</i></dt>
+     <dd> DB table for this dialog must exist (it should be created if it
+	 is not already present in the DB); all fields must contain valid
+	 data, except the ID field which must be empty; any errors with this
+	 operation should be reported to the status area in a meaningful way; if
+	 the operation succeeds, a message in the status area should indicate
+	 this, and the ID field should now contain the ID value assigned by the
+	 DB.</dd>
+<p>
+</p><dt> <u>DELETE</u>: <i>delete all records which meet the input criteria</i></dt>
+     <dd> DB table for this dialog must exist (it should be created if it
+     is not already present in the DB); all records that have values in all
+     corresponding to the contents of the non-empty input fields in
+     the dialog application (note that not all fields are required to have
+     a value---if you enter only the ID value, only one record will be
+     deleted; however, if you enter values for multiple non-primary key
+     fields it is possible to delete many records at once); all non-empty
+     fields must contain valid values; <u>all</u> delete operations should
+     pop up a window displaying a summary of the records that will be
+     deleted and request confirmation before proceeding; any errors with
+     this operation should be reported to the status area in a meaningful
+     way; correct operation should report the number of entries deleted
+     from the DB.</dd>
+<p>
+</p><dt> <u>UPDATE</u>: <i>update fields in the database record with the
+                       specified primary key (ID)</i></dt>
+     <dd> DB table for this dialog must exist (it should be created if it is
+     not already present in the DB); only non-empty fields should be updated;
+     it is an error to attempt an update on a non-existent primary key, or
+     with illegal values in input fields; any errors with this operation
+     should be reported to the status area in a meaningful way; correct
+     operation should also be reported to the status area, and the newly
+     updated record loaded into the fields of the dialog.</dd>
+<p>
+</p><dt> <u>QUERY</u>: <i>display all records that meet the input criteria</i></dt>
+     <dd> the database should be queried for all records which match the
+     non-empty text entry fields, and the resulting records formatted sensibly
+     and displayed in the status area; if the ID field has a value (implying
+     there is at most one result) this operation should also populate all
+     dialog fields with the full contents of the record---any other values
+     currently in fields should be overwritten; any errors with this operation
+     should be reported to the status area in a meaningful way.
+</dd></dl>
+
+NOTE 1: All database interaction is to occur in these <tt>ActionListener</tt>
+classes; you should not be modifying the Java being output to implement the
+dialog to support this (the only edit to the output of existing code is
+the automatic inclusion of the ID field---all DB-handling details are to
+be addressed in your <tt>ActionListener</tt> classes.
+<p>
+NOTE 2: The database connection information is provided during the installation
+of your software (see below); you should be incorporating this information
+automatically to support the functionality of your <tt>ActionListener</tt>
+classes (e.g. proving a local config file, inserting the relevant information
+into the generated classes dynamically, assuming you are generating them at
+compile time, etc.).
+
+<br><br>
+</p><hr>
+
+<center><h3>Installation Script</h3></center>
+<p>
+You are to provide a self-extracting script (bash or python) to perform the
+installation and setup of your system.  We should not have to understand any
+aspect of the installation or compilation of your system aside from the
+interaction with the script described here.  Installation will be performed as
+follows:
+</p><p>
+Your self-contained, self-extracting install script (which is the only
+component of submission) should be called <tt>install_dialogc.sh</tt> or
+<tt>install_dialogc.py</tt>, depending if you use bash or python respectively.
+This script will be run at the command-line and should perform the following:
+
+</p><ol>
+<li> Display whatever start-up title you wish
+</li><li> Inform the user how you intend to install the system (e.g. if you are
+     going to unpack the source code in a subdirectory of the current one and
+     perform the build there, etc.), and obtain confirmation that the script
+     can proceed
+</li><li> Extract the build from the script, unpack it and compile the system
+     reporting errors to the user as necessary
+</li><li> Assuming the build was successful, prompt for a directory in which
+     to install the system
+</li><li> If the directory already exists: ensure that i have write permission on
+     it, otherwise inform the user that the directory does not exist and
+     prompt for it's creation.  If the user answers no, installation should
+     stop, otherwise you should attempt to create whatever directories are
+     necessary to create the full path specified by the user (again, reporting
+     failure and aborting if these directories cannot be created for reasons
+     of permissions, etc).
+</li><li> This directory is considered the "base" directory for the installation of
+     your system.  Inside this directory should be the following:
+     <ul>
+     <li> <tt>bin</tt> directory in which the "executables" reside (i.e. the
+          dialogc IDE and command-line compiler)
+     </li><li> <tt>lib</tt> directory in which the parameter manager-related
+          libraries reside; this includes <tt>libjnipm.so</tt>, and should
+          also include <tt>libpm.a</tt> if you rely on having both libraries
+          present for whatever reason.
+     </li><li> no files related to the build should be present in the installation
+          directories (source code, object files, etc.)
+     </li></ul>
+</li><li> The installer needs to modify the user's <tt>.bashrc</tt> file so
+     that an appropriate <tt>LD_LIBRARY_PATH</tt> value is set automatically
+     when the user logs in (i.e. the user should not be required to set this
+     themselves); the script should inform the user that it is doing this
+     and confirm the change.
+</li><li> The installer will also need to set up appropriate defaults for the
+     Java compiler, compiler arguments, jre and jre arguments; we will leave
+     this as a design issue however suggestions include: generating a
+     "definitions" class as part of the build prior to compilation to set
+     these values, placing a <tt>.dialogc</tt> file in the user's home
+     directory that contains these values to be read by the compiler when it
+     is invoked, etc.  Note that you cannot assume that you know the username
+     prior to installation (hint: there is a <tt>HOME</tt> environment variable
+     available that can be used when the script runs)---don't be silly and
+     start hard-coding paths to your own home directory during development as
+     that isn't going to work when we try to run it.  How you obtain values
+     for these defaults is also left as an exercise (prompt for it, look for
+     the executable on the local disk, etc.).
+</li><li> Copy all relevant files into the <tt>bin</tt> and <tt>lib</tt> directories
+     specified above (at this point, assuming the user logs out and back in,
+     or sources their <tt>.bashrc</tt> file, it should be possible to execute
+     the IDE and begin using it).
+</li><li> Clean up the remains of the compile so that anything that was purely part
+     of the build process is removed from the system cleanly; only the
+     installed system remains.
+</li><li> <b>Note: your script must support the following command-line flags:</b>
+     <ul>
+     <li> <tt>--build</tt>: the script should only perform actions up
+          to the building of the code and then stop, leaving the build
+          directory in place ready for a subsequent installation
+     </li><li> <tt>--install</tt>: the script should only perform actions after
+          the building of the code, and assumes the build was already
+          performed; if there is no build present an appropriate error should
+          be displayed to the user and the script should exit
+     </li></ul>
+</li></ol>
+<p>
+Your install script should provide meaningful feedback to the user as the
+installation progresses, and should strive to hide the output from programs
+being run within the script (e.g. "compiling system" output as the system is
+being made, with no output from the compilation process itself - hint: you can
+always redirect output to <tt>/dev/null</tt>).
+<br><br>
+
+</p><hr>
+
+<h3>Implementation Guidelines</h3>
+<p>
+You must base the implementation of this assignment on the version of the
+system you developed for assignment 3.  It is expected at this point that
+the entire product from the sequence of the assignments in this course
+works in its entirety (specifically: you could make use of the
+<tt>parametermanager</tt> library directly in other code, write and compile
+DB-enabled dialogs from within the IDE and using the external command-line
+compiler invoked either from within the IDE or on the command-line directly).
+You can expect penalties to be applied for absent functionality that was
+required on the assignments leading up to this one.  <i>Given the limited
+time available prior to the final exam, you should be taking extra care in
+testing your submission to ensure correctness; there will be little time
+or patience for non-functional submissions</i>.
+</p><p>
+You are required to implement the database integration with the JDBC API,
+making use of the postgres database provided for your use (details regarding
+the database server will be provided in class).
+</p><p>
+Wherever possible, the <tt>ActionListener</tt> classes you implement and
+provide as part of the system should be responsible for error checking
+(determining if all required fields are non-empty, validating types, etc.).
+Note that most of this is already incorporated into the system you have
+implemented previously, however it is the <tt>ActionListener</tt>'s job to
+perform their function properly and make use of the hooks you have provided
+for this purpose.
+</p><p>
+The Java IDE should still be called <b>Dialogc</b>, and the command-line
+compiler generated by lex and yacc should be compiled into an executable
+<b>yadc</b>.
+</p><p>
+The installation script is to be entirely self-contained; the only thing
+in your repository when you submit should be this script.  The tarball
+containing the source code for building the system must be part of the
+script.  This implies that the script must be able to apply some process
+to itself in order to extract the tarball --- have a look at <tt>uuencode</tt>
+or <tt>mime</tt>-related tools for this purpose (this will be covered in lab
+as well for reference).
+</p><p>
+We will test your program with our own test files.  If our programs
+fail to compile or run because your compiler does not correctly follow the
+specification, you will receive 0 (zero) marks!
+<br><br><br>
+
+
+</p><h3>Makefile</h3>
+<p>
+The compilation process, while automated by your script, is still required
+to be managed through a Makefile.  You are responsible for providing the
+makefile to compile your code.  Assuming the build directory is present (i.e.
+extracted from the install script), typing "<tt>make</tt>" or
+"<tt>make dialogc</tt>" should result in the production and compilation of all
+required components with the result being the ability to invoke the Java IDE
+from the command line and your application executing correctly (note: this
+makefile must correctly compile the C library, the Java code that implements
+the gui and the lex/yacc that implements the command-line compiler).  You
+should ensure that all required dependencies are specified correctly.
+<br><br><br>
+
+</p><hr>
+<h3>Deliverables</h3>
+Note: as stated above, the exact organization of the source code component of
+your submission is largely up to you.  we expect to be able to run the install
+script and have the system installed as described.
+<ul>
+<li> Installer:
+     <ul>
+     <li>A self-contained, self-extracting installer script is the only
+         thing submitted for this assignment (<tt>install_dialogc.sh</tt> or
+         <tt>install_dialogc.py</tt> depending if you implemented the script
+         using bash or python.
+     </li><li>Note that the installer implicitly includes the source code/build
+         materials.
+    </li></ul></li>
+<p>
+</p><li> Use of repository:
+     <ul>
+     <li> Students are <u>required</u> to use the course-provided git
+          repository for revision control management during development.  there
+          will be mark deductions for failure to make use of this repository
+          over time.</li>
+     <li> Doing all development first and then importing it all to your
+          repository purely for submission defeats the purpose of using
+          revision control and is unacceptable.  You must be making use of
+          your repository during development.</li>
+     </ul></li>
+<p>
+</p><li> Apply release tag for submission:
+     <ul>
+     <li> The source code and documentation making up your submission should be
+          tagged appropriately in your git repository prior to the due
+          time, as described in the
+          <a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/assignments.html#submissions">submission guidelines</a>
+          for the course.</li>
+	 <p>
+     </p><li> <div class="attention">
+              <font size="+2">The tag to be used for this assignment
+              submission is: <b><tt>2750W15_A4</tt></b></font>
+          </div>
+          <p>
+          <b><i>Be absolutely certain that your repository is tagged correctly
+          as this is the exact (and only) tag we will pull from your repository
+          for grading purposes.</i></b></p></li>
+     </ul></li>
+</ul> 
+<br>
+
+<hr>
+<i> Last Modified: 2015 / 03 / 16</i>
+
+
+</font></body></html>

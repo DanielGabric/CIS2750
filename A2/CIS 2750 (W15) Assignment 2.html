@@ -1,0 +1,544 @@
+
+<!-- saved from url=(0065)http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/A2/ -->
+<html hola_ext_inject="ready"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title> CIS*2750 (W15) Assignment 2 </title>
+<link rel="stylesheet" type="text/css" href="./CIS 2750 (W15) Assignment 2_files/dbmcc.css">
+<style type="text/css"></style></head>
+<body background="./CIS 2750 (W15) Assignment 2_files/marble.gif" hola-ext-player="1">
+<hr>
+
+<center>
+<font size="5"> <b>Software Systems Development and Integration</b></font><br>
+<font size="3"> CIS*2750 (W15) <br>
+</font></center><font size="3">
+<hr>
+<br>
+<center><font size="4"><u>Assignment #2</u></font>
+<br><br>
+<b>Due:</b> February 8, 2015 at midnight
+<br><br>
+
+Key concepts: <i>Graphical user interfaces; system integration; simple
+              compilation</i>.
+</center>
+
+<br><br>
+
+Compilation is the process of reading a program written in one language 
+(the <i>source language</i>) and translating it into an equivalent program
+in another language (the <i>target language</i>).  The C compiler that we have
+used in this course takes a program written in the C programming language, and
+translates it into an assembly language suitable for use on the target
+platform.
+<p>
+The parameter manager library implemented in assignment 1 was intended to
+be highly generic for maximum reuse in a potentially wide variety of
+applications.  Given a suitable source language, the parameter manager could
+easily be adapted to serve as the parser for a compiler.  In this assignment
+your task is to write an application that operates as a compiler, translating
+a simplified input language into an executable Java program.  Additionally, you
+will provide a graphical user interface to act as a development environment
+for this compiler.
+</p><p>
+Read the following sections carefully to ensure that you know what is to be
+done and what is to be handed in. There are many details that must be handled
+correctly for you to receive full marks on this assignment; you should pay
+attention to these details.   Your Makefile must correctly produce the program
+required, and each function, type and program file must be correctly named and
+must behave in the appropriate way. If the details aren't addressed
+successfully you will lose marks.  Please refer to the
+<a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/assignments.html#style">coding style guidelines</a> to provide
+direction regarding the format of the code you write.  You are expected to
+work independently on this assignment (please see notes on
+<a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/outline.html#cheating">academic misconduct in computing</a> for
+clarification if necessary).
+
+<br><br>
+
+</p><hr>
+
+<center><h3>Dialog Compiler</h3></center>
+
+<p>
+This assignment can be discussed in two parts: 1) the development environment
+and compiler, and 2) the format of the input language and the requirements
+associated with the Java applications it produces.<br><br><br>
+
+</p><p>
+</p><h3>The Application</h3>
+<p>
+You are to provide a graphical user interface which will serve as a simple
+development environment for developing and compiling programs in the source
+language.  This interface is to be written in Java, specifically making use
+of the <tt>javax.swing</tt> library package for the GUI, and the Java Native
+Interface (JNI) to permit the Java application to make use of the native C
+library directly, and should look something like the following:
+</p><p>
+</p><center> <img src="./CIS 2750 (W15) Assignment 2_files/ide.png"> </center>
+<p>
+The editor consists of:
+</p><ol>
+<li> a menu bar, with menu options "File", "Compile", "Config" and "Help"
+</li><li> a button bar, with graphic adorned buttons for performing common operations
+</li><li> an editor area with scrollbars where text can be displayed and
+     edited (i.e. the "config" files)<br>
+</li><li> a status bar which indicates the current project being edited (the
+     project is the name of the file(s) minus any extension---if the project
+     is called <tt>foo</tt>, it is implicit that this consists of a
+     source file called <tt>foo.config</tt>; the status bar should
+     indicate if the project has unsaved modifications.
+</li></ol>
+<p>
+The menus should contain the following options (in order);
+</p><p>
+</p><h4><u>File:</u></h4>
+<ul>
+<li> <b>New</b> - start a new project
+     <ul>
+     <li> if a project is currently opened, the user should be given the option
+          to save it if is has been changed since it was open
+     </li><li> if the current project is new, the user should be prompted for a name
+          for the saved file(s) (you can assign a default if you like, but the
+          user should still be prompted); note that the file associated with
+	  the project should have a <tt>.config</tt> extension.
+     </li></ul>
+</li><li> <b>Open</b> - open an existing project
+     <ul>
+     <li> if a project is currently opened, the user should be given the option
+          to save it if is has been changed since it was open; note that the
+	  file associated with the project should have a <tt>.config</tt>
+	  extension.
+     </li><li> if the current project is new, the user should be prompted for a name
+          for the project (you can assign a default if you like, but the user
+          should still be prompted)
+     </li></ul>
+</li><li> <b>Save</b> - save current file
+     <ul>
+     <li> if the current project is new, the user should be prompted for a name
+          for the project (you can assign a default if you like, but the user
+          should still be prompted); note that the file associated with
+	  the project should have a <tt>.config</tt> extension.
+     </li></ul>
+</li><li> <b>Save As</b> - save current file with new name
+     <ul>
+     <li> identical to the Save option, however the user should be immediately
+          provided with the dialog to save a project with a new name (keeping
+	  in mind the <tt>.config</tt> extension).
+     </li><li> if the project is already named, that name should be already loaded
+          into the filename box
+     </li></ul>
+</li><li> <b>Quit</b> - terminate the program
+     <ul>
+     <li> if a currently opened project is modified, the user should be prompted
+          to save it
+     </li></ul>
+</li></ul>
+<p>
+</p><h4><u>Compile:</u></h4>
+<ul>
+<li> <b>Compile</b> - compile the currently loaded file
+     <ul>
+     <li> see language section below for discussion of the two files
+          involved in compilation
+     </li><li> the compiled application (the collection of .java source files that
+          implements the dialog box) should be created in a subdirectory with
+          the same name as the project (i.e. the <tt>.config</tt> file with no
+	  extension) and the file containing the main method (i.e. the
+	  application) should also have the same name as the project file,
+	  with a <tt>.java</tt> extension; you can generate as many additional
+	  files, according to whatever conventions you deem appropriate, as
+	  may be necessary to realize a dialog application.
+     </li><li> if the project is new and/or unsaved, the user should be prompted to
+          save it, and give it a name, first (keep in mind the <tt>.config</tt>
+	  extension); if there already exists a project by the same name as
+	  that which would be created, a yes/no dialog box should be presented
+	  asking if the file(s) should be overwritten
+     </li><li> errors in compilation should be written to a separate pop-up text
+          window with a scrollbar and a single "Dismiss" button that closes
+          this window
+     </li></ul>
+</li><li> <b>Compile and run</b> - identical to the "Compile" option, however
+     on successful compilation the resulting Java application should be
+     compiled and executed immediately (see "Config" menu for Java
+     compiler settings)
+</li></ul>
+<p>
+</p><h4><u>Config:</u></h4>
+<ul>
+<li> <b>Java Compiler</b> - specify the external Java compiler to be used
+     when compiling the code your dialog compiler generates
+     <ul>
+     <li> the current setting should always be displayed as part of the menu
+     </li><li> when editing this value, the user should be allowed to either enter
+          a complete path to the compiler manually, or browse for the
+          application on the file system.
+     </li></ul>
+</li><li> <b>Compile options</b> - options to be used when compiling Java
+     <ul>
+     <li> the current setting should always be displayed as part of the menu
+     </li><li> editing the compiler arguments should be free-form, and whatever the
+          user specifies here should be used explicitly as options to the
+          Java compiler when doing external compilation (i.e. allowing the
+          user to set a classpath or other parameters that may be relevant
+          to the project)
+     </li></ul>
+</li><li> <b>Java Run-time</b> - specify the external Java runtime command to be
+     used when running the code generated by the dialog compiler
+     <ul>
+     <li> the current setting should always be displayed as part of the menu
+     </li><li> when editing this value, the user should be allowed to either enter
+          a complete path to the JVM manually, or browse for the application
+          on the file system.
+     </li></ul>
+</li><li> <b>Run-time options</b> - options to be used when invoking the external
+     JVM
+     <ul>
+     <li> the current setting should always be displayed as part of the menu
+     </li><li> editing the jvm arguments should be free-form, and whatever the
+          user specifies here should be used explicitly as options to the
+          JVM when invoking the external run-time (i.e. allowing the
+          user to set a classpath or other parameters that may be relevant
+          to the execution of the code)
+     </li></ul>
+</li><li> <b>Working Directory</b> - build directory for emitted Java code
+     <ul>
+     <li> the current setting should always be displayed as part of the menu
+     </li><li> this should have a default value of the current directory (.), and
+          if edited by the user should be used in place of "." as the leading
+          path to the location where the Java program, as described above, gets
+          generated (i.e. if the "working directory" is set to <tt>foo/bar</tt>,
+          and you are currently editing <tt>dialog.config</tt>, the compiled
+          dialog would appear in <tt>foo/bar/dialog</tt> with the main class
+          called "dialog" appearing in <tt>foo/bar/dialog/dialog.java</tt>;
+          directories should be created if they do not exist.
+     </li></ul>
+</li></ul>
+<p>
+</p><h4><u>Help:</u></h4>
+<ul>
+<li><b>Help</b> - this option should pop-up a dialog which contains the
+                  information that you would normally include in your
+                  <tt>README</tt> file, and any other documentation you feel
+                  like providing for your program.
+</li><li><b>About</b> - pops up a dialog with your submission information (name,
+                   id, etc.) and a dismiss button that closes this window.
+</li></ul>
+
+All menu options (menu titles and options within menus) should be fully
+keyboard accelerated - that is to say there should be keyboard shortcuts for
+every menu and menu option.
+
+<br><br><br>
+
+<p>
+</p><h4>File Dialogs</h4>
+NOTE: you are required to provide file dialogs for various reasons - they
+should provide the following basic functionality (varying only in title and
+functionality depending on whether you are opening or saving a file).  Note
+that I fully expect people to simply use an appropriately configured
+<tt>JFileChooser</tt>, so the look, feel and functionality of this dialog
+is largely determined for you---ensure it operates in a suitable fashion
+given the nature of this application (i.e. it should support a File Format
+option for the Dialogc projects, etc.)
+<p>
+</p><center> <img src="./CIS 2750 (W15) Assignment 2_files/filechooser.png"> </center>
+
+<br><br>
+
+<p>
+</p><h3>The Language</h3>
+<p>
+</p><p>
+The compiler you are to write will make use of the parameter manager library
+you wrote in assignment 1 to parse the parameter-based language (specified
+in the next section), and output Java code that implements the specified
+dialog-like interface (see specifications in following sections).  Once
+compiled, the resulting Java code should be able to be compiled and executed
+immediately without modification, from within the GUI environment, or
+otherwise.
+</p><p>
+An example of the look of an application produced by your compiler appears
+below:
+</p><p>
+</p><center> <img src="./CIS 2750 (W15) Assignment 2_files/compiled.png"> </center>
+<p></p>
+
+<p>
+Due to the nature of the input, two passes over the config file will be
+required to accumulate all necessary information---this is due to declaring
+both the fields, and the types of the fields, which are dependent on knowing
+the field names which you won't know until afte the first parse.
+
+</p><p>
+The first pass will involve creating/initializing a ParameterManager to scan
+for known parameters corresponding to the three major components of the
+dialog (specifically the title, fields, and buttons).  Once we know the
+names of the fields/buttons we're interested in, a second ParamaterManager
+can be initialized specifically to get values associated with each of the
+fields (types) and buttons (ActionListeners)
+
+</p><p>
+<b>NOTES:</b>
+</p><ul>
+<li> <i>If you followed my suggestion for A1 and the ParameterManager is
+     implemented such that it ignores unregistered parameters that appear in
+     the input, the above operation is already supported.</i></li>
+<li> <i>If your ParameterManager was implemented such that it generates
+     errors for unregistered parameters, you'll have to make accomodation to
+     support the single file; my suggestion here is to modify your 
+     <tt>parseFrom</tt> function to consider the "special" character sequence
+     "#!#", occurring at the start of a line, as equivalent to EOF.  This
+     allows you to have the two sets of values in the same file, albeit in a
+     specific order---we choose "#!#" as that allows us to use a single set of
+     test files regardless of implementation assuming we use "#" as the
+     comment character (although you have to be careful checking for #!# at
+     the start of the line before you assume it is a comment).</i></li>
+</ul>
+
+<p>
+</p><h4>The .config file</h4>
+<p>
+The .config file will have the following format:<br>
+</p><pre>    title = string;
+    fields = list;
+    buttons = list;
+
+    #!#
+
+    label1 = string;
+    label2 = string;
+    ...
+    button1 = string;
+    button2 = string;
+    ...
+</pre>
+
+Where <i>labels</i> are strings provided in the <b>fields</b> parameter
+elsewhere in the file, and <i>buttons</i> are the strings provided similarly
+in the <b>buttons</b> parameter (see below).  Note that the special character
+sequence separator would not be needed depending on your implementation
+(however would cause no issues assuming we specify '#' as a comment character).
+<p>
+These fields have the following interpretation:
+</p><ul>
+<li> <tt>title</tt> is the desired name of the application
+</li><li> <tt>fields</tt> is a list of text labels for the text entry fields in
+     the application
+</li><li> <tt>buttons</tt> is a list of text labels for the buttons in the
+     application
+</li><li> <tt>labels</tt> - a type, one of:
+     <ul>
+     <li> string
+     </li><li> float
+     </li><li> integer
+     </li></ul>
+     <i>You should validate that these values are expected, and track what this
+     is for future reference, however we will not be making use of the types
+     for these fields until assignment 4</i>
+</li><li> <tt>buttons</tt> - the name of a Java class to be used as the 
+     <tt>ActionListener</tt> for the button, when pressed
+     <ul>
+     <li> note that this code is expected to be <u>user provided</u>; you
+          only need to concern yourself with generating the appropriate
+          code to make use of the specified class as the button's
+          ActionListener; it is assumed that the programmer will have
+          provided an appropriate class, in the correct location (e.g. main
+          build directory), to make compilation/execution possible.
+     </li><li> in order for the user to be able to specify and define appropriate
+          <tt>ActionListener</tt> classes to handle button clicks, we need to
+	  specify the expected interface and names of the get/set methods
+	  generated to allow <tt>ActionListener</tt> objects to interact with
+	  the fields of the compiled dialog.  These are critically important
+	  details---see "The Compiled Program" section below for additional
+	  information.
+     </li></ul>
+</li></ul>
+
+During compilation, you will need to use a parameter manager instance to parse
+the <tt>title</tt>, <tt>fields</tt> and <tt>buttons</tt> parameters to obtain
+the values you will need to process specific values for each field/button.
+Based on the values provided to you in the initial pass, you will initialize a
+second parameter manager to parse the labels obtaining additional information
+you will need to generate the required Java code.
+
+<p>
+The compiler should provide, as output, a Java program that provides an
+interface as illustrated above, making use of the <tt>javax.swing</tt> library
+package for GUI components.
+
+</p><p>
+</p><h4>The Compiled Program</h4>
+<p>
+The Java program output by your compiler should have the following general
+format (as depicted in the example above).  Note: as the format of the
+compiled application has the same format, with the exception of text
+field and button contents, you have enough information to generate the
+complete application automatically):
+</p><ul>
+<li> The name of the application on the title bar
+</li><li> An area of labeled text entry fields (assumed to be stacked vertically
+     as in the example)
+</li><li> An area of labeled buttons (assumed to be stacked horizontally as in
+     the example)
+</li><li> A text area labeled status, with a scroll bar, where output from the
+     operation of the program can be displayed and reviewed.
+</li></ul>
+The class generated to implement the dialog <u>must</u>
+provide the following methods (for use in user-provided classes attached to
+the buttons):
+<ul>
+<li> get and set methods for all <i>fields</i> defined in the config file as
+     follows: "get" + "DC" + field_name, and "set" + "DC" + field_name.  By
+     way of example, a field called <i>LastName</i> should result in public
+     <tt>getDCLastName</tt> and <tt>setDCLastName</tt> methods in the generated
+     code for the top level Dialog class that allow the caller to obtain the
+     value in the field and assign a new value to the field respectively.
+     <i>The purpose of this is to 1) ensure the user writing the
+     <tt>ActionListener</tt> has standardized functions to inquire of and
+     manipulate fields in the generated dialog, and 2) to avoid potential
+     name collisions with methods defined by library-provided classes.</i>
+<p>
+</p></li><li> "get" methods should return the contents of the associated field as a
+     <tt>String</tt>.  "set" methods should accept a <tt>String</tt> as their
+     argument, which is placed in the corresponding field unchanged.  Note: the
+     only place where validation of the field contents occurs is when the
+     relevant "get" method is invoked (although the contents of that field
+     are returned as a <tt>String</tt>); the <tt>ActionListener</tt> is free
+     to set illegal values in the fields by use of the "set" methods.
+<p>
+</p></li><li> a method: <tt>public void appendToStatusArea(String message);</tt> which
+     will append the provided message string to the status area.
+<p>
+</p></li><li> A Java interface should be automatically generated (part of the compiled
+     output) that specifically declares the <tt>get/set</tt> and
+     <tt>appendToStatusArea</tt> methods described above, and the top level
+     dialog class should be declared to implement this interface (which it
+     does, having provided implementations for all the <tt>get/set</tt> and
+     <tt>appendToStatusArea</tt> methods).  This interface is to be named
+     based on the name of the dialog (i.e. the name of the project being
+     compiled) as follows: project_name + "FieldEdit".  For example, if the
+     project is called "StudentRec", the generated interface should be called
+     <tt>StudentRecFieldEdit</tt>.
+<p>
+</p></li><li> NOTE: It should be assumed that the user-provided <tt>ActionListener</tt>
+     provides a constructor which takes a reference to the interface
+     defined above as its single argument.  This allows the user-defined
+     <tt>ActionListener</tt> classes to be written under the assumption that
+     it can access the public get/set and appendToStatusArea methods provided
+     by the dialog class, without needing to type cast.
+</li></ul>
+</font>
+<br>
+<h3>Implementation Guidelines</h3>
+<p>
+First, you should ensure that any deficiencies in your first assignment are
+corrected - without the first assignment working to at least some degree, it
+will be impossible to complete this assignment.  A working copy of assignment
+1 will <u><b>not</b></u> be provided for you to work from, and the use of
+another person's assignment 1 will be treated as academic misconduct.
+</p><p>
+You will construct the GUI in Java using the <tt>javax.swing</tt> package,
+which for the purpose of compilation will make use of the Java Native Interface
+(JNI) to leverage the ParameterManager library, implemented in C, that you
+wrote for for assignment 1 to set up and perform the necessary parsing and
+output out of the appropriate Java program.  Control passes from the Java that
+implements your interface to functions you implemented in the ParamterManager
+to do the first-stage parse of the relevant <tt>.config</tt> file; once this
+is done the Java layer should create and configure the second parameter
+manager in the same way to extract the specific values on the second-stage
+pass of the file.  Based on the values you parse from the file, the Java GUI
+will write out the Java code that implements the dialog described to an
+appropriately organized directory and set of files (as specified above).
+</p><p>
+Note that you will ultimately need to build the C code into a shared library
+(shared object file if you prefer), rather than a static one as was the case
+in A1.  The process for doing this is straightforward and will be reviewed
+in class/seminar.  The name of the shared library produced for the purpose of
+supporting JNI integration should be <tt>libJNIpm.so</tt>.
+</p><p>
+You should take care to handle the interaction between the Java GUI and the
+C library appropriately so that errors generated by the C code are formatted
+and output appropriately in the error window should there be problems during
+the compilation process.  That is to say that although errors are primarily
+detected in the C library, it is the Java GUI's responsibility to format and
+output these messages in the appropriate manner.
+</p><p>
+The integrated development environment Java application that you develop should
+be called <tt><b>Dialogc</b></tt> (i.e. the main routine is in a class called
+<tt>Dialogc</tt>, which appears in a file called <tt>Dialogc.java</tt>).  You
+are free to organize your build hierarchy and file organization as you see fit
+otherwise.
+</p><p>
+We will test your program with our own test files.  If our programs
+fail to compile or run because your compiler does not correctly follow the
+specification, you will receive 0 (zero) marks!
+
+<br><br><br>
+
+</p><h3>Makefile</h3>
+<p>
+You are responsible for generating a Makefile to compile your code.  Typing
+"<tt>make</tt>" or "<tt>make Dialogc</tt>" should result in the
+compilation of all required components with the result being the ability to
+invoke the Java GUI from the command line and your application executing
+correctly (note: this makefile must correctly compile both the C library and
+the Java code that implements the GUI).  You should ensure that all required
+dependencies are specified correctly.
+<br><br>
+
+</p><hr>
+<h3>Deliverables</h3>
+<ul>
+<li> Source code:
+     <ul>
+	 <li>Source code for the <b>Dialogc</b> compiler (C code: the parameter
+         manager library; Java code: the IDE/compiler implementation), and
+         any other source files necessary for compilation).</li>
+     <li>a <tt>Makefile</tt> must be provided that compiles (properly)
+         everything required for the assignment when <tt>make all</tt> is
+         executed</li>
+    <li><b>NOTE</b>: The required <tt>README</tt> file containing instructions
+        and notes for the marker is to be integrated into your GUI in the Help
+        menu (see above).  See
+        <a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/assignments.html#submissions">assignment guidelines</a>
+        for details regarding this file.</li>
+        <li>Any additional files required by the above</li>
+    </ul></li>
+<p>
+</p><li> Use of Repository:
+     <ul>
+     <li> Students are <u>required</u> to use the course-provided
+          Git repository for revision control management during
+          development.  There will be mark deductions for failure to make
+          use of this repository over time.</li>
+     <li> Doing all development first and then importing it all to your
+          repository purely for submission defeats the purpose of using
+          revision control and is unacceptable.  You must be making use of
+          your repository during development.</li>
+     </ul></li>
+<p>
+</p><li> Apply release tag for submission:
+     <ul>
+     <li> The source code and documentation making up your submission should be
+          tagged appropriately in your git repository prior to the due
+          time, as described in the
+          <a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/assignments.html#submissions">submission guidelines</a>
+          for the course.</li>
+     <p>
+     </p><li> <div class="attention">
+              <font size="+2">The tag to be used for this assignment
+              submission is: <b><tt>2750W15_A2</tt></b></font>
+          </div>
+          <p>
+          <b><i>Be absolutely certain that your repository is tagged correctly
+          as this is the exact (and only) tag we will pull from your repository
+          for grading purposes.</i></b></p></li>
+     </ul></li>
+</ul> 
+<br>
+<hr>
+
+<i> Last Modified: 2015 / 01 / 19</i>
+
+
+</body></html>

@@ -1,0 +1,428 @@
+
+<!-- saved from url=(0065)http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/A1/ -->
+<html hola_ext_inject="ready"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title> CIS*275 (W15) Assignment 1 </title>
+<link rel="stylesheet" type="text/css" href="./CIS 275 (W15) Assignment 1_files/dbmcc.css">
+<style type="text/css"></style></head>
+<body background="./CIS 275 (W15) Assignment 1_files/marble.gif" hola-ext-player="1">
+<hr>
+
+<center>
+<font size="5"> <b>Software Systems Development and Integration</b></font><br>
+<font size="3"> CIS*2750 (W15) <br>
+</font></center><font size="3">
+<hr>
+<br>
+<center><font size="4"><u>Assignment #1</u></font>
+<br><br>
+<b>Due:</b> January 18, 2015 at midnight
+<br><br>
+
+Key concepts: <i>Library implementation in C; coding to a specification;
+              file handling; parsing</i>.
+</center>
+
+<br><br>
+
+A common requirement of an application is the ability to read a set of
+parameters from an external source (a file for example).  This is often used
+to maintain configuration information between executions of the application.
+An example of this is the <a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/A1/pinerc">.pinerc</a> file for the pine
+mailer.  It is somewhat wasteful to write application-specific code to
+perform this function for every applications that uses it.  Your task will
+be to implement a library of routines that can be sufficiently configured
+to perform this task for a wide variety of applications.
+<p>
+What follows is a detailed specification of the abstract data types and
+related functionality that is required of your library.  It is critical
+that you fully understand what you are required to produce---if you find
+any aspect of this specification unclear, it is your responsibility to have
+it clarified.  This is important in order to satisfy 2 objectives of this
+assignment: 1) giving you experience implementing a specification and 2) since
+this library will serve as the basis for future assignment(s), it is in your
+best interest to ensure it is implemented correctly now.
+</p><p>
+Read the following sections carefully to ensure that you know what is to be
+done and what is to be handed in. There are many details that must be handled
+correctly for you to receive full marks on this assignment; you should pay
+attention to these details.   Your Makefile must correctly produce the library
+required, and each function, type and program file must be correctly named and
+must behave in the appropriate way. If the details aren't addressed
+successfully you will lose marks.  Please refer to the
+<a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/assignments.html#style">coding style guidelines</a> to provide
+direction regarding the format of the code you write.  You are expected to
+work independently on this assignment (please see notes on
+<a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/outline.html#cheating">academic misconduct in computing</a> for
+clarification if necessary).
+
+<br><br>
+
+</p><hr>
+
+<center><h3>Parameter Management Library</h3></center>
+
+The library you are to write will provide a type (<tt>ParameterManager</tt>)
+and a set of operations defined on this type.  These operations will support:
+declaration, construction and destruction of objects of this type;
+registration of parameters with such an object to later be parsed from an
+external source; and obtaining the values assigned to parameters during
+parsing.  The parameter manager will support the typing of parameters
+(validated during parsing), and supports "optional" parameters that need
+not appear in the input stream.  <u>This library is to be written in C</u>.
+<i>Please note that it is a requirement of all assignments that you utilize the
+course-provided git repository for revision management and submission.
+See deliverables section below for additional detail.</i>
+<p>
+It is your responsibility to design and code appropriate data structures
+to implement this specification.  Spend some time thinking about what
+information your data structure will need to track and design an appropriate
+structure <b>before</b> you commit to something inadequate by writing a lot
+of code.  Remember that your library is being used by an application, and all
+that application wants to know about your library is that by including the
+necessary header file, it can declare variables of a given type, and pass
+them to function you provide to carry out specific tasks.  The application
+should not be concerned with your particular implementation details (which is
+in-keeping with the notion of an abstract data type).
+
+<br><br><br>
+
+</p><h3>ADT specifications:</h3>
+In the ADT specifications that follow, there is always the implicit
+precondition that any provided ADT object is valid.
+
+<p>
+</p><div class="announce">
+<center><u>ParameterManager ADT</u></center>
+<p>
+<b>Definition</b>:<br>
+A ParameterManager is a facility for the tracking, parsing and retrieval of
+parameters from an input stream.  Parameters are supported in one of the
+following formats:
+</p><pre>name = value;
+name = { [value1 [, value2, ...]] };
+</pre>
+
+<p>
+<b>Operations</b> (as C function prototypes):<br>
+</p><dl>
+<dt>
+     <code>ParameterManager * PM_create(int size);</code>
+</dt>
+<dd>
+     <u>Creates a new parameter manager object</u><br>
+     PRE: size is a positive integer (see note 1 below)<br>
+     POST: Returns a new parameter manager object initialized to be empty
+           (i.e. managing no parameters) on success, NULL otherwise (memory
+           allocation failure)
+</dd>
+<p>
+</p><dt>
+     <code>int PM_destroy(ParameterManager *p);</code>
+</dt>
+<dd>
+     <u>Destroys a parameter manager object</u><br>
+     PRE: n/a<br>
+     POST: all memory associated with parameter manager <code>p</code> is
+           freed; returns 1 on success, 0 otherwise</dd>
+<p>
+</p><dt>
+     <code>int PM_parseFrom(ParameterManager *p, FILE *fp, char comment);</code>
+</dt>
+<dd>
+     <u>Extract values for parameters from an input stream</u> (see note 2
+         below)<br>
+     PRE: <code>fp</code> is a valid input stream ready for reading that
+          contains the desired parameters<br>
+     POST: All required parameters, and those optional parameters present, are
+           assigned values that are consumed from <code>fp</code>, respecting
+           <code>comment</code> as a "start of comment to end of line"
+           character if not nul ('\0'); returns non-zero on success, 0
+           otherwise (parse error,memory allocation failure)</dd>
+<p>
+</p><dt>
+     <code>int PM_manage(ParameterManager *p, char *pname, param_t ptype,
+                         int required);</code>
+</dt>
+<dd>
+     <u>Register parameter for management</u><br>
+     PRE: <code>pname</code> does not duplicate the name of a parameter already
+          managed<br>
+     POST: Parameter named <code>pname</code> of type <code>ptype</code> (see
+           note 3 below) is registered with <code>p</code> as a parameter;  if
+           <code>required</code> is zero the parameter will be considered
+           optional, otherwise it will be considered required; returns 1 on
+           success, 0 otherwise (duplicate name, memory allocation failure)<br>
+</dd>
+<p>
+</p><dt>
+     <code>int PM_hasValue(ParameterManager *p, char *pname);</code>
+</dt>
+<dd>
+     <u>Test if a parameter has been assigned a value</u><br>
+     PRE: <code>pname</code> is currently managed by <code>p</code><br>
+     POST: Returns 1 if <code>pname</code> has been assigned a value, 0
+           otherwise (no value, unknown parameter)<br>
+</dd>
+<p>
+</p><dt>
+     <code>union param_value PM_getValue(ParameterManager *p,
+                                         char *pname);</code><br>
+</dt>
+<dd>
+     <u>Obtain the value assigned to <code>pname</code></u><br>
+     PRE: <code>pname</code> is currently managed by <code>p</code> and has
+           been assigned a value<br>
+     POST: Returns the value (see note 4 below) assigned to <code>pname</code>;
+           result is undefined if <code>pname</code> has not been assigned
+           a value or is unknown<br>
+</dd>
+<br>
+<hr>
+<hr>
+<br>
+<b>Implementation Issues</b>
+<p>
+</p><ol>
+<li> The <code>size</code> argument can be, but is not required to be, the
+     number of parameters to be managed by the new object; it can however be
+     used for any other suitable purpose (e.g. the size of a hash table used
+     to store the parameters).</li>
+<p>
+</p><li> Note the following when parsing parameters from the input stream:
+     <ul>
+     <li> parameter names are case-sensitive (i.e. Name != name)</li>
+     <li> parameters can occur in any order</li>
+     <li> required parameters must be present, however optional ones may or
+          may not be present - neither of which is an error</li>
+     <li> <tt>LIST_TYPE</tt> values can be an empty list (e.g.
+          <code>name = {};</code>)</li>
+     <li> any violation of the expected format is a parse error</li>
+     <li> the type of a parameter must be enforced - an incorrectly typed
+          value for a parameter is a parse error</li>
+     <li> parameters are terminated by semi-colons (not end-of-line) so can
+          span multiple lines, have comments in the middle of them, etc.</li>
+     </ul></li>
+<p>
+</p><li> You must provide symbolic constants (e.g. as an enumeration) in the
+     header file for your library to represent the supported parameter types,
+     which are:
+     <ul>
+     <li> INT_TYPE - integer values (positive and negative) </li>
+     <li> REAL_TYPE - floating point values </li>
+     <li> BOOLEAN_TYPE - boolean values ("true" and "false") </li>
+     <li> STRING_TYPE - character strings <font color="red">(note: strings are
+          delimitted by double quotes e.g. "First Name")</font></li>
+     <li> LIST_TYPE - sequence of comma-separated strings
+          <font color="red">(note: these strings are also delimitted by
+          double quotes e.g. "list val 1")</font></li>
+
+     </ul></li>
+<p>
+</p><li> Values assigned to parameters should be stored and returned in the
+     following union data type (which should appear in your header file to
+     make it available outside your library):
+<pre>union param_value
+{
+    int           int_val;
+    float         real_val;
+    Boolean       bool_val;   /* see additional types section below */
+    char          *str_val;
+    ParameterList *list_val;  /* see additional types section below */
+};
+</pre>
+     This allows the value of a parameter to be stored in the same field
+     regardless of type, and places the responsibility for interpreting the
+     type correctly on the calling module.
+</li></ol>
+</dl></div>
+
+<br><br>
+<p>
+<u> Your library should provide 2 additional types for utility and
+    completeness </u>
+<br><br><br>
+
+
+</p><p>
+</p><center>
+<table border="2" cellpadding="10">
+<tbody><tr><td>
+<center><u>Boolean ADT</u></center>
+<p>
+<b>Definition</b>:<br>
+A boolean is a variable with the domain { true, false }
+</p></td></tr>
+<tr><td>
+<b>Implementation Issues</b>
+<p>
+</p><ol>
+<li> You should provide a type definition to allow the application to declare
+     variables of type <code>Boolean</code> and symbolic constants to allow the
+     use of literals <code>true</code> and <code>false</code> for assignment,
+     conditionals, etc.</li>
+<li> Assuming 1 and 0 are the actual values of the constants <code>true</code>
+     and <code>false</code>, you need not provide any other operations on this
+     type.</li>
+</ol>
+</td></tr>
+</tbody></table>
+</center>
+
+<br><br>
+
+<p>
+</p><center>
+<table border="2" cellpadding="10">
+<tbody><tr><td>
+<center><u>ParameterList ADT</u></center>
+<p>
+<b>Definition</b>:<br>
+A parameter list is a sequence of individual values (string type) that taken
+together constitute the value assigned to a single parameter
+</p><p>
+<b>Operations</b> (as C function prototypes):<br>
+</p><dl>
+<dt>
+     <code>char * PL_next(ParameterList *l);</code>
+</dt>
+<dd>
+     <u>Obtain the next item in a parameter list</u><br>
+     PRE: n/a<br>
+     POST: Returns the next item in parameter list <code>l</code>, NULL if
+           there are no items remaining in the list (see note below)<br>
+</dd>
+</dl></td></tr>
+<tr><td>
+<b>Implementation Issues</b>
+<p>
+This type is provided to hold the sequence of values that make up the
+value of a <tt>LIST_TYPE</tt> parameter, all of which are considered to
+be strings.  The only operation required of the application is one to
+iteratively return the items on the list.  You are not required to provide
+any means of traversing the list more than once.
+</p></td></tr>
+</tbody></table>
+</center>
+<br><br>
+
+
+<h3>Additional Notes</h3>
+<p>
+There are many accepted styles for implementing ADTs.  The one that will be
+adopted here has the ADT defined to be whatever data type (atomic or
+structured) that is appropriate; however, the expectation is that variables of
+this type will always be declared as pointers to the type.  This implies that
+<code>PM_create()</code> returns a pointer to the
+ParameterManager type, which will be assigned to an appropriate variable on
+return.  Further, as is the case in the functions specified above, the subject
+of an ADT operation is always passed as a pointer.  This serves to make
+the declaration, creation, use and destruction of ADTs consistent in all
+situations.  These concepts are illustrated in the example to follow.
+</p><p>
+The following is an example of an application using the library specified in
+this assignment (<i><b>this is simply a usage example---you should not be using
+this as your only test case; it doesn't end well</b></i>).
+</p><p>
+Example application: <a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/A1/a1example.c">a1example.c</a> which might be used
+to extract parameters from a file such as
+<a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/A1/a1config.txt">a1config.txt</a>.
+<br><br><br>
+
+</p><h3>Implementation Guidelines</h3>
+<p>
+The implementation of the <b>ParameterManager</b> library is to be realized
+with at least two files: <tt>ParameterManager.h</tt> which is to contain
+all function prototypes and data declarations (types, constants, etc.)
+required to use your library, and <tt>ParameterManager.c</tt> which
+will contain the implementation of the functions and any supporting code for
+the various data types contained in this specification.
+</p><p>
+</p><center>
+<table border="2" cellpadding="10">
+<tbody><tr><td>
+<b>Please note</b>: the types in question <u>must</u> be called
+<tt>ParameterManager</tt>, <tt>Boolean</tt> and <tt>ParameterList</tt>.
+Similarly, functions must have the same names and parameter declarations
+that are provided in the specification.  The compiled library is to be called
+<tt>libpm.a</tt>.
+</td></tr>
+</tbody></table>
+</center>
+<p>
+You are free to use additional source and/or header files as you see fit, and
+may implement additional functions and types to facilitate your implementation,
+however these should be considered internal to you library.  In any case, it
+will be assumed that the only header file required to make use of your library
+is <tt>ParameterManager.h</tt>.
+</p><p>
+Your library will be tested with our own test programs. If our programs
+fail to compile or run because your module does not correctly follow the
+specification, you will receive 0 (zero) marks!
+
+<br><br><br>
+
+</p><h3>Makefile</h3>
+<p>
+You are responsible for generating a Makefile to compile your code.  Typing
+"<tt>make</tt>" or "<tt>make ParameterManager</tt>" should result in the
+compilation of all required components with the result being your library
+(<tt>libpm.a</tt>).  You should ensure that all required dependencies are
+specified correctly.
+<br><br>
+
+</p><hr>
+<h3>Deliverables</h3>
+<ul>
+<li> Source code:
+    <ul>
+    <li> implementation of your <b>ParameterManager</b> library
+        (<tt>ParameterManager.c, ParameterManager.h</tt> and any other
+        source files necessary for compilation).</li>
+    <li> a <tt>Makefile</tt> must be provided that compiles (properly)
+         everything required for the assignment when <tt>make all</tt> is
+         executed.</li>
+    <li>The required <tt>README</tt> file containing instructions and notes for
+        the marker, as well as the <a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/pledge.txt">pledge.txt</a>
+        ethical certification file.  See
+	<a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/assignments.html#submissions">assignment
+        guidelines</a> for details regarding these files.</li>
+    <li>Any additional files required by the above</li>
+    </ul></li>
+<p>
+</p><li> Use of Repository:
+    <ul>
+    <li> Students are <u>required</u> to use the course-provided gid
+         repository for revision control management during development.  Grade
+	 pentalties will apply if you do not make use of this repository over
+         time.</li>
+    <li> Doing all development first and then importing it all to your
+         repository purely for submission defeats the purpose of using
+         revision control and is unacceptable.  You must be making use of
+         your repository during development.</li>
+    </ul></li>
+<p>
+</p><li>Apply release tag for submission:
+    <ul>
+    <li> The source code and documentation making up your submission should be
+         appropriately in your git repository prior to the due
+         time, as described in the
+         <a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/assignments.html#submissions">submission guidelines</a>
+         for the course.</li>
+         <p>
+         </p><li> <div class="attention">
+              <font size="+2">The tag to be used for this assignment
+              submission is: <b><tt>2750W15_A1</tt></b></font></div>
+         <p>
+         <b><i>Be absolutely certain that your
+         repository is tagged correctly as this is the exact (and only)
+         tag we will pull from your repository for grading purposes.</i></b>
+    </p></li></ul></li>
+</ul> 
+
+<br>
+
+<hr>
+<i> Last Modified: 2015 / 01 / 07</i>
+
+
+</font></body></html>

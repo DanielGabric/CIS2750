@@ -1,0 +1,347 @@
+
+<!-- saved from url=(0065)http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/A3/ -->
+<html hola_ext_inject="ready"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title> CIS*2750 (W15) Assignment 3 </title>
+<link rel="stylesheet" type="text/css" href="./CIS 2750 (W15) Assignment 3_files/dbmcc.css">
+<style type="text/css"></style></head>
+<body background="./CIS 2750 (W15) Assignment 3_files/marble.gif" hola-ext-player="1">
+<hr>
+
+
+<center>
+<font size="5"> <b>Software Systems Development and Integration</b></font><br>
+<font size="3"> CIS*2750 (W15) <br>
+</font></center><font size="3">
+<hr>
+<br>
+<center><font size="4"><u>Assignment #3</u></font>
+<br><br>
+<b>Due:</b> March 8, 2015 at midnight
+<br><br>
+
+Key concepts: <i>lex and yacc; System integration</i>.
+</center>
+
+<br><br>
+
+In the first assignment, you built a general purpose library that could be
+configured at run-time to provide parsing services for reading "parameters"
+from an input stream.  In the second assignment we considered a particular
+application - a simple compiler that output Java programs that implement a
+text-entry dialog with buttons.
+<p>
+One approach to constructing such a system is to make use of software
+components we already have.  In the case of assignment 2, we did exactly this
+by using the parameter manager to perform parsing for us in the construction
+of the compiler.  Assuming we did not have suitable software components for
+re-use, we would have to consider what software tools are available to us
+with which to implement it from the ground up.  In the case of compilers, and
+parsers in general, this is a chore typically assigned to lex and yacc.  Your
+task in this assignment is to re-implement the compiler as specified in
+assignment 2, using lex and yacc.
+</p><p>
+Read the following sections carefully to ensure that you know what is to be
+done and what is to be handed in. There are many details that must be handled
+correctly for you to receive full marks on this assignment; you should pay
+attention to these details.   Your Makefile must correctly produce the program
+required, and each function, type and program file must be correctly named and
+must behave in the appropriate way. If the details aren't addressed
+successfully you will lose marks.  Please refer to the
+<a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/assignments.html#style">coding style guidelines</a> to provide
+direction regarding the format of the code you write.  You are expected to
+work independently on this assignment (please see notes on 
+<a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/outline.html#cheating">academic misconduct in computing</a>
+for clarification if necessary).
+
+<br><br>
+
+</p><hr>
+
+<center><h3>Dialog Compiler (lex/yacc version)</h3></center>
+
+<p>
+Re-implement the compiler portion of assignment 2 using lex and
+yacc.  Note that the output of lex and yacc is C code which implements
+the parser you described in the lex and yacc configuration files, which
+then must be compiled to produce an executable.  This command-line compiler
+should be called <tt>yadc</tt>.
+</p><p>
+Since it is an executable, you should be able to invoke this compiler directly
+from the command-line if desired (subject to the constraints on the input
+file, noted below), however we will integrate it into our IDE as a second
+option for performing compilation of Java dialogs.
+</p><p>
+<b>Note: you are not to remove the existing functionality of your
+IDE compiler; the lex/yacc-based compiler will be incorporated to provide a
+second option for performing the same task</b>.
+<br><br><br>
+
+</p><p>
+</p><h3>Additional Requirements</h3>
+<p>
+<u><i>The <b>Config</b> menu in your IDE is now required to have an additional
+option to select the compilation mode:</i></u>
+</p><p>
+</p><h4><u>Config:</u></h4>
+<ul>
+<li> ... </li>
+<li> <b>Compile Mode</b> - specify use of the IDE or the external
+     lex/yacc-based compiler
+     <ul>
+     <li> this option should be implemented as a pair of clearly labelled
+          radio buttons only one of which can be selected (the default
+          should be the external lex/yacc compiler for the purpose of this
+          assignment).
+     </li><li> the selection here dictates how the compilation of input file(s)
+          to Java should be accomplished, regardless of how the compile
+          is triggered (i.e. menu option, toolbar button, etc.)
+     </li><li> note that all other behaviour of the application should remain
+          as specified in A2, only the process of compilation to Java
+          changes (done by the IDE using JNI and the ParameterManager library
+          as in A2, or by invoking the external lex/yacc compiler)
+     </li></ul>
+</li></ul>
+<br>
+
+<p>
+<u><i> The Java code output by your compiler is now required to have additional
+functionality:</i></u>
+</p><ol>
+<li> Note that the automatically generated <tt>getDCFieldName</tt> methods 
+     invoked (by the <tt>ActionListener</tt> attached to the button for
+     example) should be validing the contents of the text entry areas (fields)
+     to ensure that the value contained in that field is the correct type as
+     declared in the input files.  We'll formalize this behaviour by stating
+     that if the type of the entry is not correct, the method should throw
+     a <tt>IllegalFieldValueException</tt> that you will need to
+     generate---the user-provided <tt>ActionListener</tt> will assume it
+     exists and can be used.  The String message associated
+     with the exception should be the actual contents of the text entry field.
+     (This exception can be caught in the <tt>ActionListener</tt> and
+     appropriate action taken --- this is not your concern beyond making sure
+     the correct exception is thrown).  Assuming the contents of the field
+     are appropriate, the contents of that field should be returned as a
+     <tt>String</tt>.
+     <p>
+     As part of your testing, you may find it helpful to define an
+     <tt>ActionListener</tt> that queries the contents of all the fields and
+     outputs their value (or an error message) to the status area.  This
+     will help ensure you are implementing all the various requirements
+     related to supporting the externally defined <tt>ActionListener</tt>
+     appropriately.
+</p><p>
+</p></li><li> The input file used by the lex/yacc compiler can be treated in a more
+     restricted fashion (i.e. the external compiler may give parse errors on
+     something the IDE could handle without issue).  For the purpose of the
+     external compiler only, you can assume  that the "title", "fields" and
+     "buttons" parameters appear first (think of them like a variable
+     declaration in C).  If you encounter anything other than these 3 fields
+     first, you may consider it a parse error.  Similarly, it is a parser
+     error if you encounter subsequent input that contain field or button
+     names that you do not recognize.</li>
+<p>	 
+</p><li> You can assume the following additional restrictions on the input for
+     the new lex/yacc compiler only if you wish:
+     <ul>
+     <li> input will be in order: title, fields and buttons, followed by
+          field types, followed by button functions.</li>
+     <li> field and button names must be unique (that is to say, you cannot
+          simultaneously have a field and button named "example").</li>
+     </ul>
+     You cannot assume that all input will conform to these assumptions, but
+     if you wish to consider them as parse errors, that is permitted.</li>
+<p>
+</p><li> Please note that the assumptions related to the format of the input file,
+     noted in points 2 and 3 above, are only applicable when the
+     lex/yacc compiler is being used.  Your IDE-based compiler should still
+     work as originally specified (note that the <tt>#!#</tt> section delimiter
+     will just be ignored by the lex/yacc compiler as a comment).</li>
+</ol>
+NOTE: you may need to output additional code to the compiled Java application
+to support this behaviour (i.e. methods to implement some operations, data
+structures that may be necessary to track information, etc.).
+<br><br><br>
+
+<h3>Implementation Guidelines</h3>
+<p>
+What you write for this assignment is providing an <u>alternate</u> means
+of performing the compilation from input file(s) to Java code that implements
+the specified dialog.  The Java IDE compiler from the previous assignment
+should remain intact, the only difference is that it is now possible to specify
+whether to use the compiler built into the IDE with JNI, or the external
+executable compiler that you implement using lex and yacc.
+</p><p>
+You will write the new compiler entirely in lex and yacc; however, you are
+free to implement any additional functionality you find necessary to support
+the activities of lex and yacc (a symbol table for example to keep track of the
+values assigned to strings you read in).
+</p><p>
+Note that you must still manage the interface between the IDE editor and the
+new external compiler (i.e. when the IDE invokes the external compiler, it
+should pass whatever arguments are necessary, and capture the output from the
+program to report error messages to the user).  If it is necessary to run
+the compiled dialog, it will still have to be handled by the IDE --- the
+command-line compiler's only job is to read the input file and generate the
+Java code that implements the dialog.
+</p><p>
+The Java IDE should still be called <b>Dialogc</b>, subject to all previously
+provided specifications along with any fixes or modifications required by
+this assignment, and the compiler generated by lex and yacc should be compiled
+into an executable called <tt><b>yadc</b></tt>.
+</p><p>
+We will test your program with our own test files.  If our programs
+fail to compile or run because your compiler does not correctly follow the
+specification, you will receive 0 (zero) marks!
+<br><br><br>
+
+</p><h3>Example</h3>
+<p>
+This is an example of an input file that would be suitable for the command-line
+compiler along with a screenshot of what the resulting compiled dialog would
+look like (in this case, running under a NeXT-themed GUI---the window dressing
+is irrelevant).  While you may have restrictions on the format of
+the input (as noted above) for the purpose of the lex/yacc-based compiler,
+your IDE should <u>not</u> suffer from the same problem---thus it is possible
+to have input file(s) that can be compiled using the IDE compiler, but
+generate parse errors from the external compiler due to additional assumptions
+regarding the input.  This is expected.  The behaviour of the compiled dialog
+should be identical regardless of whether it was compiled using the IDE or
+external compiler.
+</p><p>
+In this example, an <tt>ActionListener</tt> class has been attached to the
+buttons that get and print the values of the dialog fields to the status
+area (note that you can infer that it is validating the contents of the
+fields; the <tt>ActionListener</tt> outputs a different message when it
+catches the <tt>IllegalFieldValueException</tt>).
+</p><p>
+contents of: <tt>video.config</tt>:
+<br><br><br>
+</p><pre>title = "Video Way Customer Records";    # Video Way db application
+
+fields = { "MemberNumber",
+           "LastName",
+           "FirstName",
+           "Address",
+           "TotalRentals",
+           "Account_balance"};
+
+# Here are some database-looking buttons (wonder where this is going...)
+buttons = { "Add", "Update", "Delete", "Query", "Print" };
+
+#!#
+
+#
+# Field type declarations
+#
+MemberNumber = "integer";
+LastName = "string";
+FirstName = "string";
+Address = "string";
+TotalRentals = "integer";
+Account_balance = "float";
+
+#
+# Button function declaration
+#
+Add = "QueryListener";
+Update = "QueryListener";
+Delete = "QueryListener";
+Query = "QueryListener";
+Print = "QueryListener";
+</pre>
+
+<p>
+
+<br><br><br>
+
+</p><center><img src="./CIS 2750 (W15) Assignment 3_files/video.gif"></center>
+
+<p>
+</p><h3>NOTE THE FOLLOWING</h3>
+
+This is only an <u>example</u> of an input file and the resulting application.
+It does not embody all the possible legal variations of an input file---do
+not use this example as the sole test case guiding your implementation.
+<p>
+There are a number of flexible issues in the design of your yacc grammar;
+consider the following:
+</p><ul>
+<li> What will you do with this: <tt>fields = { };</tt>
+</li><li> What will you do with this: <tt>buttons = { };</tt>
+</li></ul>
+<p>
+These are simply some examples of things worth thinking about as you design
+your grammar (and thus define what your command-line compiler accepts as
+input).  Try to understand the issues, and make reasonable decisions.
+<br><br><br>
+
+</p><h3>Makefile</h3>
+<p>
+You are responsible for generating a Makefile to compile your code.  Typing
+"<tt>make</tt>" or "<tt>make Dialogc</tt>" should result in the
+production and compilation of all required components with the result being
+the ability to invoke the Java IDE from the command line and your application
+executing correctly (note: this makefile must correctly compile the C library,
+the Java code that implements the GUI and the lex/yacc that implements the
+command-line compiler).  You should ensure that all required dependencies are
+specified correctly.
+<br><br><br>
+
+</p><hr>
+<h3>Deliverables</h3>
+<ul>
+<li> Source code:
+     <ul>
+     <li>Source code for the dual-implementation <b>Dialogc</b> compiler
+         (C code: the parameter manager library; Java code: the IDE/compiler
+         implementation; lex/yacc specification file along with any C code
+         necessary to support the command-line compiler, and
+         any other source files necessary for compilation).</li>
+     <li>a <tt>Makefile</tt> must be provided that compiles (properly)
+         everything required for the assignment when <tt>make all</tt> is
+         executed</li>
+    <li><b>NOTE</b>: The required <tt>README</tt> file containing instructions
+        and notes for the marker is to be integrated into your GUI in the Help
+        menu (see above).  See
+        <a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/assignments.html#submissions">assignment guidelines</a>
+         for details regarding this file.</li>
+    <li>Any additional files required by the above</li>
+    </ul></li>
+<p>
+</p><li> Use of Repository:
+     <ul>
+     <li> Students are <u>required</u> to use the course-provided Git
+          repository for revision control management during development.  There
+          will be mark deductions for failure to make use of this repository
+          over time.</li>
+     <li> Doing all development first and then importing it all to your
+          repository purely for submission defeats the purpose of using
+          revision control and is unacceptable.  You must be making use of
+          your repository during development.</li>
+     </ul></li>
+<p>
+</p><li> Apply release tag for submission:
+     <ul>
+     <li> The source code and documentation making up your submission should be
+          tagged appropriately in your Git repository prior to the due
+          time, as described in the
+          <a href="http://www.uoguelph.ca/~dmccaugh/teaching/CIS2750/Assignments/assignments.html#submissions">submission guidelines</a>
+          for the course.</li>
+	 <p>
+     </p><li> <div class="attention">
+              <font size="+2">The tag to be used for this assignment
+              submission is: <b><tt>2750W15_A3</tt></b></font>
+          </div>
+          <p>
+          <b><i>Be absolutely certain that your repository is tagged correctly
+          as this is the exact (and only) tag we will pull from your repository
+          for grading purposes.</i></b></p></li>
+     </ul></li>
+</ul> 
+<br>
+
+<hr>
+<i> Last Modified: 2015 / 03 / 03</i>
+
+
+</font></body></html>
