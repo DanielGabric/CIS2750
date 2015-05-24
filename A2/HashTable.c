@@ -61,7 +61,7 @@ void deleteTable(HashTable * toBeDeleted)
 /*Adds an element to the hashtable*/
 void addToTable(HashTable * h, Node * data, int optional, int infoChecked)
 {
-    h->table[hashFunction(h,data->k)] = addToList(h->table[hashFunction(h,data->k)],data,optional,infoChecked);	
+    h->table[hashFunction(h,data->k)] = addToList(h->table[hashFunction(h,data->k)],data,optional,infoChecked); 
 }
 
 /*Checks if a certain key is in the hashtable*/

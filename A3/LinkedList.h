@@ -11,23 +11,23 @@
 
 typedef struct n
 {
-	char * k;
-	/*Pointer to Information instance in ParamMan.h*/
-	param_t type;
+    char * k;
+    /*Pointer to Information instance in ParamMan.h*/
+    param_t type;
     union param_value pval;
     int isParam;
-	int isStr;
-	
+    int isStr;
+    
 }Node;
 
 typedef struct list
 {
-	/*Pointer to struct Node in Param.h*/
-	Node * info;
-	int required;
-	struct list * next;
+    /*Pointer to struct Node in Param.h*/
+    Node * info;
+    int required;
+    struct list * next;
 
-	int infoChecked;
+    int infoChecked;
 }LinkedList;
 
 

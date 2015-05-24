@@ -10,11 +10,11 @@ int searchList(List * list, char * data)
     List * temp = list;
     while(temp!=NULL)
     {
-    	if(!strcmp(temp->data,data))
-    	{
-    		return temp->position;
-    	}
-    	temp = temp->next;
+        if(!strcmp(temp->data,data))
+        {
+            return temp->position;
+        }
+        temp = temp->next;
     }
     return -1;
 }
