@@ -19,7 +19,7 @@ ParameterManager * PM_create(int size)
     root->t = createHashTable(size);
     if(!root->t)
     {
-    	return NULL;
+        return NULL;
     }
 
     return root;
@@ -643,7 +643,7 @@ BOOLEAN hasBeenManaged(ParameterManager *p, char * key)
 {
     if(isAlready(p->t,key))
     {
-    	return TRUE;
+        return TRUE;
     }
     return FALSE;
 }
@@ -699,16 +699,16 @@ if required is zero the parameter will be considered optional, otherwise it will
 returns 1 on success, 0 otherwise (duplicate name, memory allocation failure)*/
 int PM_manage(ParameterManager *p, char *pname, param_t ptype, int required)
 {
-	HashTable * h = p->t;
+    HashTable * h = p->t;
     int len = strlen(pname);
 
 
-	if(isAlready(h,pname))
-	{
-		return FALSE;
-	}
+    if(isAlready(h,pname))
+    {
+        return FALSE;
+    }
 
-	Node * n = malloc(sizeof(Node));
+    Node * n = malloc(sizeof(Node));
 
     /*Information * l = malloc(sizeof(Information));
 */
@@ -730,12 +730,12 @@ int PM_manage(ParameterManager *p, char *pname, param_t ptype, int required)
     n->k = malloc(sizeof(char)*(len+1));
 
 
-	strncpy(n->k,pname,len);
+    strncpy(n->k,pname,len);
     n->k[len]='\0';
 
-	addToTable(h,n,required,0);
+    addToTable(h,n,required,0);
     h->table[hashFunction(h,pname)]=addToList(h->table[hashFunction(p->t,pname)],n,-1,0);
-	return TRUE;
+    return TRUE;
 }
 
 /*Test if a parameter has been assigned a value
@@ -743,9 +743,9 @@ PRE: pname is currently managed by p
 POST: Returns 1 if pname has been assigned a value, 0 otherwise (no value, unknown parameter)*/
 union param_value PM_getValue(ParameterManager *p, char *pname)
 {
-	HashTable * h = p->t;
+    HashTable * h = p->t;
     Node * temp = get(h,pname);
-	/*Information * val = temp->information;*/
+    /*Information * val = temp->information;*/
     return temp->pval;
 }
 
@@ -754,12 +754,12 @@ PRE: pname is currently managed by p and has been assigned a value
 POST: Returns the value assigned to pname; result is undefined if pname has not been assigned a value or is unknown*/
 int PM_hasValue(ParameterManager *p, char *pname)
 {
-	HashTable * h = p->t;
-	if(isAlreadyType(h,pname))
-	{
-		return 1;
-	}
-	return 0;
+    HashTable * h = p->t;
+    if(isAlreadyType(h,pname))
+    {
+        return 1;
+    }
+    return 0;
 }
 
 

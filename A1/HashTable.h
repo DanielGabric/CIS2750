@@ -7,8 +7,8 @@
 
 typedef struct tab
 {
-	int size;
-	LinkedList ** table;
+    int size;
+    LinkedList ** table;
 
 }HashTable;
 
